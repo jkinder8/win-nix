@@ -22,14 +22,20 @@ class Grep:
     def grep(self, word_pattern, file_list, ignorecase=False):
         word_pat = find._compile_re(word_pattern, ignorecase)
         for f in file_list:
-            f_lines = [l.rstrip() for l in open(f)]
-            match_lines = []
-            for line in f_lines:
-                if word_pat.search(line):
-                    match_lines.append(line)
+            try:
+                f_lines = [l.rstrip() for l in open(f)]
+                match_lines = []
 
-            if len(match_lines) > 0:
-                self._word_dict[f] = match_lines
+                for line in f_lines:
+                    line = line.encode('utf-8', 'ignore').decode()
+                    if word_pat.search(line):
+                        match_lines.append(line)
+
+                if len(match_lines) > 0:
+                    self._word_dict[f] = match_lines
+            except UnicodeDecodeError:
+                print('Non UTF-8 file:', f)
+
 
     def get_results(self):
         return self._word_dict
