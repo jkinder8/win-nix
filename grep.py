@@ -1,14 +1,17 @@
 """
-usage: grep.py [-h] [-i] base_dir file_pattern word_pattern
+usage: grep.py [-h] [-r] [-i] base_dir file_pattern word_pattern
 
 positional arguments:
-  base_dir      Base directory to start from.
-  file_pattern  Pattern for file name match. Use * for all files
-  word_pattern  Word pattern to search in files.
+  base_dir         Base directory to start from.
+  file_pattern     Pattern for file name match. Use * for all files
+  word_pattern     Word pattern to search in files.
 
 optional arguments:
-  -h, --help    show this help message and exit
-  -i            Turn on ignore case for word search.
+  -h, --help       show this help message and exit
+  -r, --recursive  Check for word patterns from base_dir in all directories
+                   recursively.Defaults to files in base_dir only if not set.
+  -i               Turn on ignore case for word search.
+  NOTE: The file pattern given is case insensitive
 """
 import os
 from collections import defaultdict
@@ -17,7 +20,6 @@ from find import Find
 class Grep:
     def __init__(self):
         self._word_dict = defaultdict(list)
-
 
     def grep(self, word_pattern, file_list, ignorecase=False):
         word_pat = find._compile_re(word_pattern, ignorecase)
@@ -56,6 +58,9 @@ if __name__ == '__main__':
     parser.add_argument("base_dir", help="Base directory to start from.")
     parser.add_argument('file_pattern', help='Pattern for file name match. Use * for all files')
     parser.add_argument('word_pattern', help='Word pattern to search in files.')
+    parser.add_argument('-r', '--recursive', dest='depth', action='store_true',
+                        help='Check for word patterns from base_dir in all directories recursively.'
+                        'Defaults to files in base_dir only if not set.')
     parser.add_argument('-i', dest='ignore_case', action='store_true', help='Turn on ignore case for word search.')
 
     args = parser.parse_args()
@@ -65,9 +70,14 @@ if __name__ == '__main__':
         print('Base directory %s does not exist.' % args.base_dir)
         exit(1)
 
+    if not args.depth:
+        depth = 0
+    else:
+        depth = args.depth
+
     find = Find()
     # results = find.find(args.base_dir, args.pattern, args.search_type, args.ignore_case)
-    file_list = find.find(args.base_dir, args.file_pattern, 'f', True)
+    file_list = find.find(args.base_dir, args.file_pattern, depth, 'f', True)
     grep = Grep()
     grep.grep(args.word_pattern, file_list, args.ignore_case)
     grep.print_results()

@@ -29,22 +29,33 @@ class Find:
     directory given.
     """
 
-    def find(self, base_dir, pattern, find_type='f', ignorecase=False):
+    def find(self, base_dir, pattern, depth=100, find_type='f', ignorecase=False):
         """
         The method called for this class.
         :param base_dir: ex - E:/python
         :param pattern: use '*' for wildcarding characters. ex - *.txt, Data*, etc
+        :param depth: '-d', '--depth'. Depth of the directory search. 0 would be base directory only. Default = 100.
         :param find_type: -t [f = file | d = directory ]. Defaults to f if not given
         :param ignorecase: -i, Optional flag to ignore case
         :return: list
         """
         repattern = self._compile_re(pattern, ignorecase)
         result_list = []
+        # strip last chars if \ or /
+        while base_dir.endswith('\\') or base_dir.endswith('/'):
+            base_dir = base_dir[:-1]
+
+        self._base_dir_len = len(base_dir)
         if find_type == 'f':
-            result_list = self._find_files(base_dir, repattern)
+            result_list = self._find_files(base_dir, depth, repattern)
         else:
-            result_list = self._find_dirs(base_dir, repattern)
+            result_list = self._find_dirs(base_dir, depth, repattern)
         return result_list
+
+    def get_depth(self, current_dir):
+        new_chars = current_dir[self._base_dir_len:]
+        return new_chars.count('\\')
+
 
     def _compile_re(self, pattern, ignorecase):
         pattern = pattern.replace('.', '\.')
@@ -54,16 +65,20 @@ class Find:
         return re.compile('{}'.format(pattern))
 
 
-    def _find_files(self, find_dir, pattern):
+    def _find_files(self, find_dir, depth, pattern):
         filelist = []
         for (root, subs, files) in os.walk(find_dir):
+            sub_count = self.get_depth(root)
+            if sub_count > depth:
+                continue
+
             for f in files:
                 if pattern.match(f):
                     filelist.append('{}/{}'.format(root, f))
         return filelist
 
 
-    def _find_dirs(self, find_dir, pattern):
+    def _find_dirs(self, find_dir, depth, pattern):
         dirlist = []
         for (root, subs, files) in os.walk(find_dir):
             for d in subs:
@@ -78,7 +93,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("base_dir", help="Base directory to start from.")
     parser.add_argument('pattern', help='Pattern to search for.')
-    parser.add_argument('-t', '--type', dest='search_type', help='f for files or d for directories. Default=f')
+    parser.add_argument('-t', '--type', dest='search_type', help='f for files or d for directories. Default = f.')
+    parser.add_argument('-d', '--depth', dest='depth',
+                        help='Depth of the directory search. 0 would be base directory only. Default = 100.')
     parser.add_argument('-i', dest='ignore_case', action='store_true', help='Turn on ignore case.')
 
     args = parser.parse_args()
@@ -91,8 +108,14 @@ if __name__ == '__main__':
     # Check search type and set to f (file) if not given
     if not args.search_type:
         args.search_type = 'f'
+
+    if not args.depth:
+        depth = 100
+    else:
+        depth = int(args.depth)
+
     find = Find()
-    results = find.find(args.base_dir, args.pattern, args.search_type, args.ignore_case)
+    results = find.find(args.base_dir, args.pattern, depth, args.search_type, args.ignore_case)
     if len(results) > 0:
         for r in results:
             print(r)
