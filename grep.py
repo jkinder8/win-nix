@@ -29,14 +29,14 @@ class Grep:
                 match_lines = []
 
                 for line in f_lines:
-                    line = line.encode('utf-8', 'ignore').decode()
+                    line = line.encode('utf8').decode(errors='replace')
                     if word_pat.search(line):
                         match_lines.append(line)
 
                 if len(match_lines) > 0:
                     self._word_dict[f] = match_lines
             except UnicodeDecodeError:
-                print('Non UTF-8 file:', f)
+                print('Non UTF-8 chars in file:', f)
 
 
     def get_results(self):
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     if not args.depth:
         depth = 0
     else:
-        depth = args.depth
+        depth = 100
 
     find = Find()
     # results = find.find(args.base_dir, args.pattern, args.search_type, args.ignore_case)
