@@ -59,7 +59,7 @@ class Find:
 
     def _compile_re(self, pattern, ignorecase):
         pattern = pattern.replace('.', '\.')
-        pattern = pattern.replace('*', '.+')
+        pattern = pattern.replace('*', '.*')
         if ignorecase:
             return re.compile('{}'.format(pattern), re.IGNORECASE)
         return re.compile('{}'.format(pattern))
@@ -75,6 +75,7 @@ class Find:
             for f in files:
                 if pattern.match(f):
                     filelist.append('{}/{}'.format(root, f))
+
         return filelist
 
 
