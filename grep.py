@@ -21,15 +21,26 @@ class Grep:
     def __init__(self):
         self._word_dict = defaultdict(list)
 
+    def _happy_powershell(self, line):
+        """Powershell and cmd windows seem to get unhappy outside of standard
+        ascii range... replacing those chars found with '*'"""
+        mystr = []
+        for c in line:
+            if ord(c) > 127:
+                mystr.append('*')
+            else:
+                mystr.append(c)
+        return ''.join(x for x in mystr)
+
     def grep(self, word_pattern, file_list, ignorecase=False):
         word_pat = find._compile_re(word_pattern, ignorecase)
         for f in file_list:
             try:
-                f_lines = [l.rstrip() for l in open(f)]
+                f_lines = [l.rstrip() for l in open(f, encoding='utf-8')]
                 match_lines = []
 
                 for line in f_lines:
-                    line = line.encode('utf8').decode(errors='replace')
+                    line = self._happy_powershell(line)
                     if word_pat.search(line):
                         match_lines.append(line)
 
@@ -46,9 +57,9 @@ class Grep:
     def print_results(self):
         for f in self._word_dict.keys():
             print(f)
-            words = self._word_dict[f]
-            for w in words:
-                print('\t', w)
+            lines = self._word_dict[f]
+            for line in lines:
+                print('\t', line)
 
 
 
