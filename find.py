@@ -40,35 +40,51 @@ class Find:
         :return: list
         """
         repattern = self._compile_re(pattern, ignorecase)
-        result_list = []
+        #result_list = []
         # strip last chars if \ or /
         while base_dir.endswith('\\') or base_dir.endswith('/'):
             base_dir = base_dir[:-1]
 
+        # Get len of base_dir string in order to keep up
+        # with the depth of the search
         self._base_dir_len = len(base_dir)
         if find_type == 'f':
-            result_list = self._find_files(base_dir, depth, repattern)
+            result_list = self.__find_files(base_dir, depth, repattern)
         else:
-            result_list = self._find_dirs(base_dir, depth, repattern)
+            result_list = self.__find_dirs(base_dir, depth, repattern)
         return result_list
 
-    def get_depth(self, current_dir):
+    def __get_depth(self, current_dir):
+        """
+        :param current_dir: root from current location in os.walk
+        :return: Count of \ chars encountered beyond length of base directory.
+        """
+        # Get the characters beyond our base directory
         new_chars = current_dir[self._base_dir_len:]
+        # given this is windows, os.walk will be using \
         return new_chars.count('\\')
 
 
     def _compile_re(self, pattern, ignorecase):
+        """
+        Compiles our search pattern
+        :param pattern: word pattern to compile
+        :param ignorecase: Boolean - ignore case or not
+        :return: compiled word pattern
+        """
+        # Add \ to any . in the pattern string
         pattern = pattern.replace('.', '\.')
+        # Add . to any * in the pattern - match any char
         pattern = pattern.replace('*', '.*')
         if ignorecase:
             return re.compile('{}'.format(pattern), re.IGNORECASE)
         return re.compile('{}'.format(pattern))
 
 
-    def _find_files(self, find_dir, depth, pattern):
+    def __find_files(self, find_dir, depth, pattern):
         filelist = []
         for (root, subs, files) in os.walk(find_dir):
-            sub_count = self.get_depth(root)
+            sub_count = self.__get_depth(root)
             if sub_count > depth:
                 continue
 
@@ -79,9 +95,13 @@ class Find:
         return filelist
 
 
-    def _find_dirs(self, find_dir, depth, pattern):
+    def __find_dirs(self, find_dir, depth, pattern):
         dirlist = []
         for (root, subs, files) in os.walk(find_dir):
+            sub_count = self.__get_depth(root)
+            if sub_count > depth:
+                continue
+
             for d in subs:
                 if pattern.match(d):
                     dirlist.append('{}/{}'.format(root, d))

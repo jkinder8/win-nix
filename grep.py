@@ -18,46 +18,80 @@ from collections import defaultdict
 from find import Find
 
 class Grep:
+    """
+    Class to search files for given word / pattern.
+    """
     def __init__(self):
-        self._word_dict = defaultdict(list)
+        """
+        Initialize the dictionary.
+        Key = Filename -> str
+        Value = Matched lines -> list
+        """
+        self.__word_dict = defaultdict(list)
 
-    def _happy_powershell(self, line):
-        """Powershell and cmd windows seem to get unhappy outside of standard
-        ascii range... replacing those chars found with '*'"""
+    def __happy_powershell(self, line):
+        """
+        Powershell and cmd windows seem to get unhappy outside of standard
+        ascii range... replacing those chars > 127 found with '*'
+        """
         mystr = []
         for c in line:
             if ord(c) > 127:
+                # Replace the character
                 mystr.append('*')
             else:
+                # Printable character - append to the list
                 mystr.append(c)
         return ''.join(x for x in mystr)
 
     def grep(self, word_pattern, file_list, ignorecase=False):
+        """
+        :param word_pattern: Word to supply as shown with Grep.py -h
+        :param file_list: List of files to be searched.
+        :param ignorecase: True / False for ignoring case for the word pattern.
+        :return: None
+        """
+        # compile the word pattern
         word_pat = find._compile_re(word_pattern, ignorecase)
         for f in file_list:
-            try:
-                f_lines = [l.rstrip() for l in open(f, encoding='utf-8')]
-                match_lines = []
+            # list to hold matching lines
+            match_lines = []
+            with open(f, 'r', encoding='utf-8') as fp:
+                try:
+                    while True:
+                        line = fp.readline()
+                        if line == '':
+                            break
 
-                for line in f_lines:
-                    line = self._happy_powershell(line)
-                    if word_pat.search(line):
-                        match_lines.append(line)
+                        if word_pat.search(line):
+                            # pattern match. strip newline and check ord for each char
+                            line = line.rstrip()
+                            line = self.__happy_powershell(line)
+                            match_lines.append(line)
 
-                if len(match_lines) > 0:
-                    self._word_dict[f] = match_lines
-            except UnicodeDecodeError:
-                print('Non UTF-8 chars in file:', f)
+                except UnicodeDecodeError:
+                    print('Cannot decode:', f)
 
+            # put entry in the dictionary if word pattern found.
+            if len(match_lines) > 0:
+                self.__word_dict[f] = match_lines
 
     def get_results(self):
-        return self._word_dict
+        """
+        :return: Dictionary containing the file name and a list
+        of matching lines
+        """
+        return self.__word_dict
 
 
     def print_results(self):
-        for f in self._word_dict.keys():
+        """
+        :return: None
+        Print results to stdout
+        """
+        for f in self.__word_dict.keys():
             print(f)
-            lines = self._word_dict[f]
+            lines = self.__word_dict[f]
             for line in lines:
                 print('\t', line)
 
